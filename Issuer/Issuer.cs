@@ -165,13 +165,6 @@ namespace SeraphID
         /// <returns>Deserialized ClaimStatus</returns>
 
         private static ClaimStatus ByteArray2ClaimStatus(byte[] value) => value == null || value.Length == 0 ? ClaimStatus.Nonexistent : (ClaimStatus)(int)value.AsBigInteger();
-
-        /// <summary>
-        /// Helper method to deserialize bytes to boolean
-        /// </summary>
-        /// <param name="data">Serialized boolean</param>
-        /// <returns>Deserialized boolean</returns>
-        private static bool Bytes2Bool(byte[] data) => data != null && data.Length > 0 && data[0] != 0;
         
         /// <summary>
         /// Helper method to deserialize bytes to string

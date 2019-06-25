@@ -6,6 +6,15 @@ using System.Numerics;
 namespace SeraphID
 {
     /// <summary>
+    /// Issuer Trust Status Flag
+    /// </summary>
+    public enum IssuerStatus
+    {
+        NotTrusted = 0,
+        Trusted = 1
+    }
+
+    /// <summary>
     /// SeraphID Trust Anchor Smart Contract Template
     /// </summary>
     public class RootOfTrust : SmartContract
@@ -27,8 +36,7 @@ namespace SeraphID
         }
 
         private static readonly string TRUST_ANCHOR_NAME = "SeraphID Trust Anchor Template";
-        private static readonly string TRUST_ANCHOR_DID = "did:neo:private:HMT5rCkqvjcjZZHQFvQtsX";
-
+        private static readonly string TRUST_ANCHOR_DID = "did:neo:priv:HMT5rCkqvjcjZZHQFvQtsX";
         private static readonly byte[] OWNER = "AKkkumHbBipZ46UMZJoFynJMXzSRnBvKcs".ToScriptHash();
 
         /// <summary>
@@ -42,9 +50,10 @@ namespace SeraphID
             string schemaName = (string)args[1];
 
             StorageMap issuerTrustList = Storage.CurrentContext.CreateMap(issuerDID);
-            bool trusted = Bytes2Bool(issuerTrustList.Get(schemaName));
 
-            return Result(true, trusted);
+            IssuerStatus status = ByteArray2IssuerStatus(issuerTrustList.Get(schemaName));
+
+            return Result(true, status == IssuerStatus.Trusted);
 	    }
 
         /// <summary>
@@ -59,10 +68,8 @@ namespace SeraphID
             string schemaName = (string)args[1];
 
             StorageMap issuerTrustList = Storage.CurrentContext.CreateMap(issuerDID);
-            bool trusted = Bytes2Bool(issuerTrustList.Get(schemaName));
-            if (trusted) return Result(false, "Schema-Issuer combination already registered.");
+            issuerTrustList.Put(schemaName, IssuerStatus2ByteArray(IssuerStatus.Trusted));
 
-            issuerTrustList.Put(schemaName, Bool2Bytes(true));
             return Result(true, true);
         }
 
@@ -78,8 +85,9 @@ namespace SeraphID
             string schemaName = (string)args[1];
 
             StorageMap issuerTrustList = Storage.CurrentContext.CreateMap(issuerDID);
-            bool trusted = Bytes2Bool(issuerTrustList.Get(schemaName));
-            if (!trusted) return Result(false, "No such issuer-schema pair registered");
+            IssuerStatus status = ByteArray2IssuerStatus(issuerTrustList.Get(schemaName));
+
+            if (status == IssuerStatus.NotTrusted) return Result(false, "No such issuer-schema pair registered");
 
             issuerTrustList.Delete(schemaName);
 
@@ -88,17 +96,19 @@ namespace SeraphID
         }
 
         /// <summary>
-        /// Helper method to serialize a boolean
+        /// Helper method to serialize IssuerStatus
         /// </summary>
-        /// <param name="data">boolean to be serialized</param>
-        private static byte[] Bool2Bytes(bool data) => data ? new byte[] { 0xf } : new byte[] { 0x0 };
+        /// <param name="value">ClaimStatus</param>
+        /// <returns>Serialized ClaimStatus</returns>
+        private static byte[] IssuerStatus2ByteArray(IssuerStatus value) => ((BigInteger)(int)value).AsByteArray();
 
         /// <summary>
-        /// Helper method to deserialize bytes to boolean
+        /// Helper method to deserialize bytes to IssuerStatus
         /// </summary>
-        /// <param name="data">Serialized boolean</param>
-        /// <returns>Deserialized boolean</returns>
-        private static bool Bytes2Bool(byte[] data) => data != null && data.Length > 0 && data[0] != 0;
+        /// <param name="value">Serialized ClaimStatus</param>
+        /// <returns>Deserialized ClaimStatus</returns>
+        private static IssuerStatus ByteArray2IssuerStatus(byte[] value) => value == null || value.Length == 0 ? IssuerStatus.NotTrusted : (IssuerStatus)(int)value.AsBigInteger();
+
 
         /// <summary>
         /// Helper method to deserialize bytes to string
