@@ -36,7 +36,7 @@ namespace SeraphID
         }
 
         private static readonly string TRUST_ANCHOR_NAME = "SeraphID Trust Anchor Template";
-        private static readonly string TRUST_ANCHOR_DID = "did:neo:priv:HMT5rCkqvjcjZZHQFvQtsX";
+        private static readonly string TRUST_ANCHOR_DID = "did:neo:priv:AKkkumHbBipZ46UMZJoFynJMXzSRnBvKcs";
         private static readonly byte[] OWNER = "AKkkumHbBipZ46UMZJoFynJMXzSRnBvKcs".ToScriptHash();
 
         /// <summary>
