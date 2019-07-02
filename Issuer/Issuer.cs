@@ -40,7 +40,7 @@ namespace SeraphID
         }
 
         private static readonly string ISSUER_NAME = "SeraphID Issuer Template";
-        private static readonly string ISSUER_DID = "did:neo:priv:HMT5rCkqvjcjZZHQFvQtsX";
+        private static readonly string ISSUER_DID = "did:neo:priv:AKkkumHbBipZ46UMZJoFynJMXzSRnBvKcs";
         private static readonly string ISSUER_PUBLIC_KEY = "02b3622bf4017bdfe317c58aed5f4c753f206b7db896046fa7d774bbc4bf7f8dc2";
 
         private static readonly string SCHEMA_DEFINITIONS_MAP = "schema-definitions";
