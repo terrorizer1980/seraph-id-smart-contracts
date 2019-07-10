@@ -1,4 +1,7 @@
-﻿/// <note>
+﻿/// Copyright (c) 2019 Swisscom Blockchain AG
+/// Licensed under MIT License
+
+/// <note>
 /// The private keys for the issuer corresponds to wallet2.json
 /// </note>
 using Neo.SmartContract.Framework;

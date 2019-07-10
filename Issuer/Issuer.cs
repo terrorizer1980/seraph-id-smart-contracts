@@ -1,4 +1,7 @@
-﻿using Neo.SmartContract.Framework;
+﻿/// Copyright (c) 2019 Swisscom Blockchain AG
+/// Licensed under MIT License
+
+using Neo.SmartContract.Framework;
 using Neo.SmartContract.Framework.Services.Neo;
 using System.Numerics;
 using Neo.SmartContract.Framework.Services.System;
