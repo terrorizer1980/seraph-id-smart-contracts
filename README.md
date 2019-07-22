@@ -1,6 +1,6 @@
 <p align="center">
 <img
-    src="https://github.com/swisscom-blockchain/seraph-id-landing-page/blob/master/assets/img/logo-dark.png"
+    src="https://www.seraphid.io/assets/img/logo-dark.png"
     width="450px">
 </p>
 <h1></h1>
