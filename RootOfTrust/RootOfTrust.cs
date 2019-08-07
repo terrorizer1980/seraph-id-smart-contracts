@@ -31,7 +31,6 @@ namespace SeraphID
         public static object Main(string operation, object[] args)
         {
             if (operation == "Name") return TRUST_ANCHOR_NAME;
-            if (operation == "DID") return TRUST_ANCHOR_DID;
             if (operation == "IsTrusted") return IsTrusted(args);
             if (operation == "RegisterIssuer") return RegisterIssuer(args);
             if (operation == "DeactivateIssuer") return DeactivateIssuer(args);
@@ -39,8 +38,7 @@ namespace SeraphID
         }
 
         private static readonly string TRUST_ANCHOR_NAME = "SeraphID Trust Anchor Template";
-        private static readonly string TRUST_ANCHOR_DID = "did:neo:priv:AKkkumHbBipZ46UMZJoFynJMXzSRnBvKcs";
-        private static readonly byte[] OWNER = "AKkkumHbBipZ46UMZJoFynJMXzSRnBvKcs".ToScriptHash();
+        private static readonly byte[] OWNER = "AK2nJJpJr6o664CWJKi1QRXjqeic2zRp8y".ToScriptHash();
 
         /// <summary>
         /// Checks if given issuer-schema pair is trusted
