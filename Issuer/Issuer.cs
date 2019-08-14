@@ -32,7 +32,6 @@ namespace SeraphID
         public static object Main(string operation, params object[] args)
         {
             if (operation == "Name") return ISSUER_NAME;
-            if (operation == "DID") return ISSUER_DID;
             if (operation == "PublicKey") return ISSUER_PUBLIC_KEY;
             if (operation == "GetSchemaDetails") return GetSchemaDetails(args);
             if (operation == "RegisterSchema") return RegisterSchema(args);
@@ -43,14 +42,13 @@ namespace SeraphID
         }
 
         private static readonly string ISSUER_NAME = "SeraphID Issuer Template";
-        private static readonly string ISSUER_DID = "did:neo:priv:AKkkumHbBipZ46UMZJoFynJMXzSRnBvKcs";
-        private static readonly string ISSUER_PUBLIC_KEY = "02b3622bf4017bdfe317c58aed5f4c753f206b7db896046fa7d774bbc4bf7f8dc2";
+        private static readonly string ISSUER_PUBLIC_KEY = "031a6c6fbbdf02ca351745fa86b9ba5a9452d785ac4f7fc2b7548ca2a46c4fcf4a";
 
         private static readonly string SCHEMA_DEFINITIONS_MAP = "schema-definitions";
         private static readonly string REVOKABLE_SCHEMAS_MAP = "revokable-schemas";
         private static readonly string CLAIMS_MAP = "claims";
 
-        private static readonly byte[] OWNER = "AKkkumHbBipZ46UMZJoFynJMXzSRnBvKcs".ToScriptHash();
+        private static readonly byte[] OWNER = "AK2nJJpJr6o664CWJKi1QRXjqeic2zRp8y".ToScriptHash();
 
         /// <summary>
         /// Gets a schemas definition given its name
@@ -150,7 +148,7 @@ namespace SeraphID
 
             StorageMap claims = Storage.CurrentContext.CreateMap(CLAIMS_MAP);
             ClaimStatus status = ByteArray2ClaimStatus(claims.Get(id));
-        
+
             return status == ClaimStatus.Valid;
         }
 
@@ -168,7 +166,7 @@ namespace SeraphID
         /// <returns>Deserialized ClaimStatus</returns>
 
         private static ClaimStatus ByteArray2ClaimStatus(byte[] value) => value == null || value.Length == 0 ? ClaimStatus.Nonexistent : (ClaimStatus)(int)value.AsBigInteger();
-        
+
         /// <summary>
         /// Helper method to deserialize bytes to string
         /// </summary>

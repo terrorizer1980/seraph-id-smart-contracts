@@ -35,7 +35,6 @@ namespace SeraphID
         public static object Main(string operation, params object[] args)
         {
             if (operation == "Name") return ISSUER_NAME;
-            if (operation == "DID") return ISSUER_DID;
             if (operation == "PublicKey") return ISSUER_PUBLIC_KEY;
             if (operation == "GetSchemaDetails") return GetSchemaDetails(args);
             if (operation == "RegisterSchema") return RegisterSchema(args);
@@ -46,7 +45,6 @@ namespace SeraphID
         }
 
         private static readonly string ISSUER_NAME = "Real Estate Agency";
-        private static readonly string ISSUER_DID = "did:neo:priv:AR3uEnLUdfm1tPMJmiJQurAXGL7h3EXQ2F";
         private static readonly string ISSUER_PUBLIC_KEY = "03d90c07df63e690ce77912e10ab51acc944b66860237b608c4f8f8309e71ee699";
 
         private static readonly string SCHEMA_DEFINITIONS_MAP = "schema-definitions";
@@ -153,7 +151,7 @@ namespace SeraphID
 
             StorageMap claims = Storage.CurrentContext.CreateMap(CLAIMS_MAP);
             ClaimStatus status = ByteArray2ClaimStatus(claims.Get(id));
-        
+
             return status == ClaimStatus.Valid;
         }
 
@@ -178,7 +176,7 @@ namespace SeraphID
         /// <param name="data">Serialized boolean</param>
         /// <returns>Deserialized boolean</returns>
         private static bool Bytes2Bool(byte[] data) => data != null && data.Length > 0 && data[0] != 0;
-        
+
         /// <summary>
         /// Helper method to deserialize bytes to string
         /// </summary>
