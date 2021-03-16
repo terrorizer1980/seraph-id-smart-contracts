@@ -1,10 +1,12 @@
 ﻿/// Copyright (c) 2019 Swisscom Blockchain AG
 /// Licensed under MIT License
 
+using Neo;
+using Neo.Cryptography.ECC;
 using Neo.SmartContract.Framework;
 using Neo.SmartContract.Framework.Services.Neo;
+using System;
 using System.Numerics;
-using Neo.SmartContract.Framework.Services.System;
 
 namespace SeraphID
 {
@@ -23,133 +25,154 @@ namespace SeraphID
     /// </summary>
     public class Issuer : SmartContract
     {
+        private static readonly string ISSUER_NAME = "Seraph Issuer Template";
+        private static readonly ECPoint ISSUER_DEFAULT_PUBLIC_KEY = (ECPoint)"02e3729c717dd45a40400f91419e2663b404831f94c7cc4d68ecba642cd8dfd176".HexToBytes();//changed
+
+        private static StorageMap schema => Storage.CurrentContext.CreateMap(nameof(schema));
+        private static StorageMap claims => Storage.CurrentContext.CreateMap(nameof(claims));
+
+        private static readonly UInt160 OWNER = "NXJTCgwFDeboGmxAYNMaJcddHjwtwNoUkZ".ToScriptHash();//changed
+
         /// <summary>
-        /// Main entrypoint of the smart contract
+        /// Get issuer name
         /// </summary>
-        /// <param name="operation">The method to be invoked</param>
-        /// <param name="args">Arguments specific to the method</param>
-        /// <returns>Result object</returns>
-        public static object Main(string operation, params object[] args)
+        public static string Name()
         {
-            if (operation == "Name") return ISSUER_NAME;
-            if (operation == "PublicKey") return ISSUER_PUBLIC_KEY;
-            if (operation == "GetSchemaDetails") return GetSchemaDetails(args);
-            if (operation == "RegisterSchema") return RegisterSchema(args);
-            if (operation == "InjectClaim") return InjectClaim(args);
-            if (operation == "RevokeClaim") return RevokeClaim(args);
-            if (operation == "IsValidClaim") return IsValidClaim(args);
-            else return Result(false, "Invalid operation: " + operation);
+            ECPoint a = new ECPoint();
+            return ISSUER_NAME;
         }
 
-        private static readonly string ISSUER_NAME = "SeraphID Issuer Template";
-        private static readonly string ISSUER_PUBLIC_KEY = "031a6c6fbbdf02ca351745fa86b9ba5a9452d785ac4f7fc2b7548ca2a46c4fcf4a";
-
-        private static readonly string SCHEMA_DEFINITIONS_MAP = "schema-definitions";
-        private static readonly string REVOKABLE_SCHEMAS_MAP = "revokable-schemas";
-        private static readonly string CLAIMS_MAP = "claims";
-
-        private static readonly byte[] OWNER = "AK2nJJpJr6o664CWJKi1QRXjqeic2zRp8y".ToScriptHash();
+        /// <summary>
+        /// Get public key list
+        /// </summary>
+        public static ECPoint[] GetPublicKeys()
+        {
+            ECPoint[] publicKeyList = Recovery.GetPublicKeys(ISSUER_DEFAULT_PUBLIC_KEY);
+            return publicKeyList;
+        }
 
         /// <summary>
         /// Gets a schemas definition given its name
         /// </summary>
-        /// <param name="args">schemaName (string)</param>
-        private static object[] GetSchemaDetails(params object[] args)
+        /// <param name="schemaName">schemaName (string)</param>
+        public static string GetSchemaDetails(string schemaName)
         {
-            if (args.Length != 1) return Result(false, "Incorrect number of parameters");
-
-            string schemaName = (string)args[0];
-
-            StorageMap definitions = Storage.CurrentContext.CreateMap(SCHEMA_DEFINITIONS_MAP);
-            string schemaDefinition = Bytes2String(definitions.Get(schemaName));
-
-            if (schemaDefinition == null) return Result(false, "Schema does not exist");
-
-            return Result(true, schemaDefinition);
+            string schemaDefinition = schema.Get(schemaName);
+            if (schemaDefinition == null) throw new Exception("Schema does not exist");
+            return schemaDefinition;
         }
 
         /// <summary>
         /// Registers a schema given a schema definition
         /// </summary>
         /// <param name="args">schemaName (string), schemaDefinition (string)</param>
-        private static object[] RegisterSchema(params object[] args)
+        public static bool RegisterSchema(string schemaName, string schemaDefinition)
         {
-            if (args.Length != 3) return Result(false, "Incorrect number of parameters");
-            if (!Runtime.CheckWitness(OWNER)) return Result(false, "Only SmartContract owner can call this operation");
+            if (!Runtime.CheckWitness(OWNER)) throw new Exception("Only SmartContract owner can call this operation");
 
-            string schemaName = (string)args[0];
-            string schemaDefinition = (string)args[1];
+            string existingDefinition = schema.Get(schemaName);
 
-            StorageMap definitions = Storage.CurrentContext.CreateMap(SCHEMA_DEFINITIONS_MAP);
-            string existingDefinition = Bytes2String(definitions.Get(schemaName));
+            if (existingDefinition != null) throw new Exception("Schema already exists");
+            schema.Put(schemaName, schemaDefinition);
 
-            if (existingDefinition != null) return Result(false, "Schema already exists");
-
-            definitions.Put(schemaName, schemaDefinition);
-
-            StorageMap revokableSchemas = Storage.CurrentContext.CreateMap(REVOKABLE_SCHEMAS_MAP);
-            revokableSchemas.Put(schemaName, (byte[])args[2]);
-
-
-            return Result(true, true);
+            //StorageMap revokableSchemas = Storage.CurrentContext.CreateMap(REVOKABLE_SCHEMAS_MAP);
+            //revokableSchemas.Put(schemaName, (byte[])args[2]);
+            return true;
         }
 
         /// <summary>
         /// Inject a claim into the smart contract
         /// </summary>
         /// <param name="args">claimID (string)</param>
-        private static object[] InjectClaim(params object[] args)
+        public static bool InjectClaim(string id)
         {
-            if (args.Length != 1) return Result(false, "Incorrect number of parameters");
-            if (!Runtime.CheckWitness(OWNER)) return Result(false, "Only SmartContract owner can call this operation");
+            if (!Runtime.CheckWitness(OWNER)) throw new Exception("Only SmartContract owner can call this operation");
 
-            string id = (string)args[0];
+            ClaimStatus status = ByteArray2ClaimStatus((byte[])claims.Get(id));
 
-            StorageMap claims = Storage.CurrentContext.CreateMap(CLAIMS_MAP);
-            ClaimStatus status = ByteArray2ClaimStatus(claims.Get(id));
+            if (status != ClaimStatus.Nonexistent) throw new Exception("Claim already exists");
 
-            if (status != ClaimStatus.Nonexistent) return Result(false, "Claim already exists");
+            claims.Put(id, (ByteString)ClaimStatus2ByteArray(ClaimStatus.Valid));
 
-            claims.Put(id, ClaimStatus2ByteArray(ClaimStatus.Valid));
-
-            return Result(true, true);
+            return true;
         }
 
         /// <summary>
         /// Revoke a claim given a claimID
         /// </summary>
         /// <param name="args">claimID (string)</param>
-        private static object[] RevokeClaim(params object[] args)
+        public static bool RevokeClaim(string id)
         {
-            if (args.Length != 1) return Result(false, "Incorrect number of parameters");
-            if (!Runtime.CheckWitness(OWNER)) return Result(false, "Only SmartContract owner can call this operation");
+            if (!Runtime.CheckWitness(OWNER)) throw new Exception("Only SmartContract owner can call this operation");
 
-            string id = (string)args[0];
+            ClaimStatus status = ByteArray2ClaimStatus((byte[])claims.Get(id));
 
-            StorageMap claims = Storage.CurrentContext.CreateMap(CLAIMS_MAP);
-            ClaimStatus status = ByteArray2ClaimStatus(claims.Get(id));
+            if (status == ClaimStatus.Nonexistent) throw new Exception("Claim does not exist");
+            if (status == ClaimStatus.Revoked) return true;
 
-            if (status == ClaimStatus.Nonexistent) return Result(false, "Claim does not exist");
-            if (status == ClaimStatus.Revoked) return Result(true, true);
-
-            claims.Put(id, ClaimStatus2ByteArray(ClaimStatus.Revoked));
-
-            return Result(true, true);
+            claims.Put(id, (ByteString)ClaimStatus2ByteArray(ClaimStatus.Revoked));
+            return true;
         }
 
         /// <summary>
         /// Check if claim is revoked
         /// </summary>
         /// <param name="args">claimID (string)</param>
-        private static bool IsValidClaim(params object[] args)
+        public static bool IsValidClaim(string id)
         {
-            if (args.Length != 1) return false;
-            string id = (string)args[0];
-
-            StorageMap claims = Storage.CurrentContext.CreateMap(CLAIMS_MAP);
-            ClaimStatus status = ByteArray2ClaimStatus(claims.Get(id));
-
+            ClaimStatus status = ByteArray2ClaimStatus((byte[])claims.Get(id));
             return status == ClaimStatus.Valid;
+        }
+
+        /// <summary>
+        /// Set recovery
+        /// </summary>
+        /// <param1 name="args">threshold(BigInteger), members(ECPoint[]), pubKeyIndex (BigInteger), message (byte[]), signature (byte[])</param>
+        /// <param2 name="args">threshold(BigInteger), members(ECPoint[]), recoveryIndexes (BigInteger[]), message (byte[]), signatures (byte[][])</param>
+        public static bool SetRecovery(BigInteger threshold, ECPoint[] members, object index, object message, object signature)
+        {
+            object[] newArgs = new object[5];
+            newArgs[0] = ISSUER_DEFAULT_PUBLIC_KEY;
+            RecoveryList recoveryList = new RecoveryList()
+            {
+                threshold = threshold,
+                members = members
+            };
+            newArgs[1] = recoveryList;
+            newArgs[2] = index;
+            newArgs[3] = message;
+            newArgs[4] = signature;
+            return Recovery.SetRecovery(newArgs);
+        }
+
+        /// <summary>
+        /// Add a new public key
+        /// </summary>
+        /// <param name="args">addedPubKey (byte[]), recoveryIndexes (BigInteger[]), message (byte[]), signature (byte[][])</param>
+        public static bool AddKeyByRecovery(ECPoint addedPubKey, BigInteger[] recoveryIndexes, byte[] message, byte[][] signature)
+        {
+            object[] newArgs = new object[5];
+            newArgs[0] = ISSUER_DEFAULT_PUBLIC_KEY;
+            newArgs[1] = addedPubKey;
+            newArgs[2] = recoveryIndexes;
+            newArgs[3] = message;
+            newArgs[4] = signature;
+            return Recovery.AddKeyByRecovery(newArgs);
+        }
+
+        /// <summary>
+        /// Remove a new public key
+        /// </summary>
+        /// <param name="args">removedPubKey (ECPoint), recoveryIndexes (BigInteger[]), message (byte[]), signature (byte[][])</param>
+        public static bool RemoveKeyByRecovery(ECPoint removedPubKey, BigInteger[] recoveryIndexes, byte[] message, byte[][] signature)
+        {
+            object[] newArgs = new object[5];
+            newArgs[0] = ISSUER_DEFAULT_PUBLIC_KEY;
+            newArgs[1] = removedPubKey;
+            newArgs[2] = recoveryIndexes;
+            newArgs[3] = message;
+            newArgs[4] = signature;
+            return Recovery.RemoveKeyByRecovery(newArgs);
         }
 
         /// <summary>
@@ -157,29 +180,17 @@ namespace SeraphID
         /// </summary>
         /// <param name="value">ClaimStatus</param>
         /// <returns>Serialized ClaimStatus</returns>
+        private static byte[] ClaimStatus2ByteArray(ClaimStatus value) => ((BigInteger)(int)value).ToByteArray();
 
-        private static byte[] ClaimStatus2ByteArray(ClaimStatus value) => ((BigInteger)(int)value).AsByteArray();
         /// <summary>
         /// Helper method to deserialize bytes to ClaimStatus
         /// </summary>
         /// <param name="value">Serialized ClaimStatus</param>
         /// <returns>Deserialized ClaimStatus</returns>
-
-        private static ClaimStatus ByteArray2ClaimStatus(byte[] value) => value == null || value.Length == 0 ? ClaimStatus.Nonexistent : (ClaimStatus)(int)value.AsBigInteger();
-
-        /// <summary>
-        /// Helper method to deserialize bytes to string
-        /// </summary>
-        /// <param name="data">Serialized string</param>
-        /// <returns>Deserialized string</returns>
-        private static string Bytes2String(byte[] data) => data == null || data.Length == 0 ? null : data.AsString();
-
-        /// <summary>
-        /// Helper method for unified smart contract return format
-        /// </summary>
-        /// <param name="success">Indicates wether an error has occured during execution</param>
-        /// <param name="result">The result or error message</param>
-        /// <returns>Object containing the parameters</returns>
-        private static object[] Result(bool success, object result) => new object[] { success, result };
+        private static ClaimStatus ByteArray2ClaimStatus(byte[] value)
+        {
+            if (value == null || value.Length == 0) return ClaimStatus.Nonexistent;
+            return (ClaimStatus)(int)value.ToBigInteger();
+        }
     }
 }
