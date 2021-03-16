@@ -144,7 +144,7 @@ namespace SeraphID
         }
 
         /// <summary>
-        /// Add a new public key to the current recovery list
+        /// Add a new public key by the recovery mechanism
         /// </summary>
         /// <param name="addedPubKey">the public key to be added</param>
         /// <param name="recoveryIndexes">indexes (BigInteger[]) of signatures  of the public keys in the current recovery list</param>
@@ -162,7 +162,7 @@ namespace SeraphID
         }
 
         /// <summary>
-        /// Remove a public key
+        /// Remove a public key by the recovery mechanism
         /// </summary>
         /// <param name="removedPubKey">the public key to be removed</param>
         /// <param name="recoveryIndexes">indexes (BigInteger[]) of signatures of the public keys in the current recovery list</param>
