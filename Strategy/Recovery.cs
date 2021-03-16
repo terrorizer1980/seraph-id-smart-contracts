@@ -20,7 +20,7 @@ namespace SeraphID
         /// <summary>
         /// Get public key list, if no public key stored then return input default public Key
         /// </summary>
-        /// <param name="args">schemaName (string)</param>
+        /// <param name="defaultPubKey">the default public key</param>
         public static ECPoint[] GetPublicKeys(ECPoint defaultPubKey)
         {
             ECPoint[] publicKeyList = GetStoredPublicKeys();
@@ -31,7 +31,6 @@ namespace SeraphID
         /// <summary>
         /// Get public key list
         /// </summary>
-        /// <param name="args">schemaName (string)</param>
         public static ECPoint[] GetStoredPublicKeys()
         {
             byte[] publicKeyBs = (byte[])Storage.Get(Storage.CurrentContext, PUBLICKEYLIST);
@@ -46,7 +45,7 @@ namespace SeraphID
         /// <summary>
         /// Set public key list
         /// </summary>
-        /// <param name="args">schemaName (string)</param>
+        /// <param name="newPubKeyList">the new public key list</param>
         private static void SetPublicKeys(ECPoint[] newPubKeyList)
         {
             Storage.Put(Storage.CurrentContext, PUBLICKEYLIST, StdLib.Serialize(newPubKeyList));
@@ -55,7 +54,6 @@ namespace SeraphID
         /// <summary>
         /// Get recovery list
         /// </summary>
-        /// <param name="args">schemaName (string)</param>
         public static RecoveryList GetRecovery()
         {
             byte[] recoveryListBs = (byte[])Storage.Get(Storage.CurrentContext, RECOVERYLIST);
@@ -70,7 +68,7 @@ namespace SeraphID
         /// <summary>
         /// Set recovery list
         /// </summary>
-        /// <param name="args">schemaName (string)</param>
+        /// <param name="recoveryList">the recovery list</param>
         private static void SetRecovery(RecoveryList recoveryList)
         {
             Storage.Put(Storage.CurrentContext, RECOVERYLIST, StdLib.Serialize(recoveryList));
@@ -79,8 +77,11 @@ namespace SeraphID
         /// <summary>
         /// Set recovery
         /// </summary>
-        /// <param1 name="args">default public key (byte[]), recoveryList (RecoveryList), pubKeyIndex (BigInteger), message (byte[]), signature (byte[])</param>
-        /// <param2 name="args">default public key (byte[]), recoveryList (RecoveryList), recoveryIndexes (BigInteger[]), message (byte[]), signatures (byte[][])</param>
+        /// <param name="args[0]">the default public key</param>
+        /// <param name="args[1]">the recovery list</param>
+        /// <param name="args[2]">the index (BigInteger) of the signature for initializing or indexes (BigInteger[]) of signatures for updating in the recovery list</param>
+        /// <param name="args[3]">the signed message</param>
+        /// <param name="args[4]">the signature (byte[]) for initializing or signatures (byte[][]) for updating</param>
         public static bool SetRecovery(params object[] args)
         {
             if (args == null || args.Length != 5) throw new Exception("Illegal input argument amount");
@@ -124,7 +125,11 @@ namespace SeraphID
         /// <summary>
         /// Add a new public key
         /// </summary>
-        /// <param name="args">default public key (ECPoint), addedPubKey (ECPoint), recoveryIndexes (BigInteger[]), message (byte[]), signature (byte[][])</param>
+        /// <param name="args[0]">the default public key</param>
+        /// <param name="args[1]">the public key to be added</param>
+        /// <param name="args[2]">the index (BigInteger) of the signature for initializing or indexes (BigInteger[]) of signatures for updating in the recovery list</param>
+        /// <param name="args[3]">the signed message</param>
+        /// <param name="args[4]">the signature (byte[]) for initializing or signatures (byte[][]) for updating</param>
         public static bool AddKeyByRecovery(params object[] args)
         {
             if (args == null || args.Length != 5) throw new Exception("Illegal input argument amount");
@@ -168,7 +173,11 @@ namespace SeraphID
         /// <summary>
         /// Remove a new public key
         /// </summary>
-        /// <param name="args">default public key (ECPoint), removedPubKey (ECPoint), recoveryIndexes (BigInteger[]), message (byte[]), signature (byte[][])</param>
+        /// <param name="args[0]">the default public key</param>
+        /// <param name="args[1]">the public key to be removed</param>
+        /// <param name="args[2]">the index (BigInteger) of the signature for initializing or indexes (BigInteger[]) of signatures for updating in the recovery list</param>
+        /// <param name="args[3]">the signed message</param>
+        /// <param name="args[4]">the signature (byte[]) for initializing or signatures (byte[][]) for updating</param>
         public static bool RemoveKeyByRecovery(params object[] args)
         {
             if (args == null || args.Length != 5) throw new Exception("Illegal input argument amount");
@@ -222,7 +231,7 @@ namespace SeraphID
         /// <summary>
         /// Returns true if input recoveryList is legal
         /// </summary>
-        /// <param name="args">schemaName (string)</param>
+        /// <param name="recoveryList">the recovery list</param>
         public static bool IsLegalRecoveryList(RecoveryList recoveryList)
         {
             ECPoint[] members = recoveryList.members;

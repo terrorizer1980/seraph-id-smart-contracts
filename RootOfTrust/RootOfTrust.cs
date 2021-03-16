@@ -1,8 +1,4 @@
-﻿/// Copyright (c) 2019 Swisscom Blockchain AG
-/// Licensed under MIT License
-
 using Neo;
-using Neo.Cryptography.ECC;
 using Neo.SmartContract.Framework;
 using Neo.SmartContract.Framework.Services.Neo;
 using System;
@@ -24,8 +20,7 @@ namespace SeraphID
     /// </summary>
     public class RootOfTrust : SmartContract
     {
-        private static readonly string TRUST_ANCHOR_NAME = "Seraph Trust Anchor Template";
-        private static readonly ECPoint ISSUER_DEFAULT_PUBLIC_KEY = (ECPoint)"033e26d8947eb55a24f16abaf4f6db5aff6e2285676815877a32c0cd83440e68a5".HexToBytes();
+        private static readonly string ROT_NAME = "Seraph Trust Anchor Template";
         private static readonly UInt160 OWNER = "NVbCf5RXFmWNjJakueHAu4wnFzzBd5gjbE".ToScriptHash();
 
         /// <summary>
@@ -33,13 +28,14 @@ namespace SeraphID
         /// </summary>
         public static string Name()
         {
-            return TRUST_ANCHOR_NAME;
+            return ROT_NAME;
         }
 
         /// <summary>
         /// Checks if given issuer-schema pair is trusted
         /// </summary>
-        /// <param name="args">issuerDID (string), schemaName (string)</param>
+        /// <param name="issuerDID">issuerDID (string)</param>
+        /// <param name="schemaName">the schema name</param>
         public static bool IsTrusted(string issuerDID, string schemaName)
         {
             StorageMap issuerTrustList = Storage.CurrentContext.CreateMap(issuerDID);
@@ -50,7 +46,8 @@ namespace SeraphID
         /// <summary>
         /// Registers an issuer-schema pair.
         /// </summary>
-        /// <param name="args">issuerDID (string), schemaName (string)</param>
+        /// <param name="issuerDID">issuer ID</param>
+        /// <param name="schemaName">the schema name</param>
         public static bool RegisterIssuer(string issuerDID, string schemaName)
         {
             if (!Runtime.CheckWitness(OWNER)) throw new Exception("Only SmartContract owner can call this operation");
@@ -63,7 +60,8 @@ namespace SeraphID
         /// <summary>
         /// Deactivates a trusted issuer-schema pair
         /// </summary>
-        /// <param name="args">issuerDID (string), schemaName (string)</param>
+        /// <param name="issuerDID">issuerDID (string)</param>
+        /// <param name="schemaName">schemaName (string)</param>
         public static bool DeactivateIssuer(string issuerDID, string schemaName)
         {
             if (!Runtime.CheckWitness(OWNER)) throw new Exception("Only SmartContract owner can call this operation");
@@ -75,62 +73,6 @@ namespace SeraphID
             issuerTrustList.Delete(schemaName);
 
             return true;
-        }
-
-        /// <summary>
-        /// Get public key list
-        /// </summary>
-        /// <param name="args">schemaName (string)</param>
-        public static ECPoint[] PublicKey()
-        {
-            ECPoint[] publicKeyList = Recovery.GetPublicKeys(ISSUER_DEFAULT_PUBLIC_KEY);
-            return publicKeyList;
-        }
-
-        /// <summary>
-        /// Set recovery
-        /// </summary>
-        /// <param1 name="args">recoveryList (byte[]), pubKeyIndex (BigInteger), message (byte[]), signature (byte[])</param>
-        /// <param2 name="args">recoveryList (byte[]), recoveryIndexes (BigInteger[]), message (byte[]), signatures (byte[][])</param>
-        public static bool SetRecovery(byte[] recoveryList, BigInteger[] recoveryIndexes, byte[] message, byte[][] signatures)
-        {
-            object[] newArgs = new object[5];
-            newArgs[0] = ISSUER_DEFAULT_PUBLIC_KEY;
-            newArgs[1] = (RecoveryList)StdLib.Deserialize((ByteString)recoveryList);
-            newArgs[2] = recoveryIndexes;
-            newArgs[3] = message;
-            newArgs[4] = signatures;
-            return Recovery.SetRecovery(newArgs);
-        }
-
-        /// <summary>
-        /// Add a new public key
-        /// </summary>
-        /// <param name="args">addedPubKey (ECPoint), recoveryIndexes (BigInteger[]), message (byte[]), signature (byte[][])</param>
-        public static bool AddKeyByRecovery(ECPoint addedPubKey, BigInteger[] recoveryIndexes, byte[] message, byte[][] signature)
-        {
-            object[] newArgs = new object[5];
-            newArgs[0] = ISSUER_DEFAULT_PUBLIC_KEY;
-            newArgs[1] = addedPubKey;
-            newArgs[2] = recoveryIndexes;
-            newArgs[3] = message;
-            newArgs[4] = signature;
-            return Recovery.AddKeyByRecovery(newArgs);
-        }
-
-        /// <summary>
-        /// Remove a new public key
-        /// </summary>
-        /// <param name="args">removedPubKey (ECPoint), recoveryIndexes (BigInteger[]), message (byte[]), signature (byte[][])</param>
-        public static bool RemoveKeyByRecovery(ECPoint removedPubKey, BigInteger[] recoveryIndexes, byte[] message, byte[][] signature)
-        {
-            object[] newArgs = new object[5];
-            newArgs[0] = ISSUER_DEFAULT_PUBLIC_KEY;
-            newArgs[1] = removedPubKey;
-            newArgs[2] = recoveryIndexes;
-            newArgs[3] = message;
-            newArgs[4] = signature;
-            return Recovery.RemoveKeyByRecovery(newArgs);
         }
 
         /// <summary>
