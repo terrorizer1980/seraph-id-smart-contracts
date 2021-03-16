@@ -1,4 +1,4 @@
-# recovery mechanism
+# Recovery mechanism
 
 NeoID uses the recovery mechanism to assign others as the coordinator, which means they can act as the issuer in the network. The coordinator can be set to one or more. 
 
@@ -6,11 +6,11 @@ The recovery mechanism somehow serves as the Committee in Neo core. It can add a
 
 >*The recovery mechanism is desired for the back up of the issuer. For Credential, recovery can be done through off-chain methods, such as backup and cloud hosting. Credential recovery is beyond the scope of this article.*
 
-## Data changed
+## Specification
 
 There should be the data structure to store the recovery information.
 
-The recovery consists of two parts, namely, the threshold and the members. Members stores all the public keys in the recovery, and the threshold is used to specify the minimum signatures to verify the message，, as shown below：
+The recovery consists of two parts, namely, the threshold and the members. Members stores all the public keys in the recovery, and the threshold is used to specify the minimum signatures to verify the message, as shown below：
 
 ```json
   {
@@ -63,7 +63,7 @@ Number |  Type   | Desc
  3  |  byte[]    | the signed message |
  4  |  byte[][] | signatures for updating
 
-To set the recovery successfullt, there should at least threshold number of signatures of the members in the `current` recovery list on the message. And the order of the signature is specified by the second parameter.
+To set the recovery successfully, there should at least threshold number of signatures of the members in the `current` recovery list on the message. And the order of the signature is specified by the second parameter.
 
 #### Add a public key by recovery
 
@@ -78,7 +78,7 @@ Number |  Type   | Desc
  2  |  byte[]  | the signed message
  3  |  byte[][] | signatures of the public keys in the current recovery list
 
-To add the public key successfullt, there should at least threshold number of signatures of the members in the `current` recovery list on the message. And the order of the signature is specified by the second parameter.
+To add the public key successfully, there should at least threshold number of signatures of the members in the `current` recovery list on the message. And the order of the signature is specified by the second parameter.
 
 #### Remove a public key by recovery
 
@@ -93,4 +93,4 @@ Number |  Type   | Desc
  2  |  byte[]  | the signed message
  3  |  byte[][] | signatures of the public keys in the current recovery list
 
-To remove the public key successfullt, there should at least threshold number of signatures of the members in the `current` recovery list on the message. And the order of the signature is specified by the second parameter.
+To remove the public key successfully, there should at least threshold number of signatures of the members in the `current` recovery list on the message. And the order of the signature is specified by the second parameter.
