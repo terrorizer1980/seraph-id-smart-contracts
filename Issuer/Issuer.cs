@@ -1,6 +1,8 @@
+using Neo;
 using Neo.Cryptography.ECC;
+using Neo.SmartContract;
 using Neo.SmartContract.Framework;
-using Neo.SmartContract.Framework.Services.Neo;
+using Neo.SmartContract.Framework.Services;
 using System;
 using System.Numerics;
 
@@ -19,13 +21,19 @@ namespace SeraphID
     /// <summary>
     /// SeraphID Issuer Smart Contract Template
     /// </summary>
-    public class Issuer : SmartContract
+    public partial class Issuer : SmartContract
     {
-        private static readonly string ISSUER_NAME = "Seraph Issuer Template";
-        private static readonly ECPoint ISSUER_DEFAULT_PUBLIC_KEY = (ECPoint)"02e3729c717dd45a40400f91419e2663b404831f94c7cc4d68ecba642cd8dfd176".HexToBytes();//changed
+        private static readonly string ISSUER_NAME = "SeraphID Issuer";
+        [InitialValue("027f2761ce450080aa10df70407953251cc18af77dc253736750cbe604703f8bfb", ContractParameterType.PublicKey)]
+        private static readonly ECPoint ISSUER_DEFAULT_PUBLIC_KEY = default;//changed
+        [InitialValue("c42184e87e4c59353309746d93da9324d6ab3d2b", ContractParameterType.ByteArray)]
+        private static readonly UInt160 Owner = default;
 
-        private static StorageMap Schema => Storage.CurrentContext.CreateMap(nameof(Schema));
-        private static StorageMap Claims => Storage.CurrentContext.CreateMap(nameof(Claims));
+        private const byte Prefix_Schema = 0x01;
+        private const byte Prefix_Claims = 0x02;
+
+        private static StorageMap Schema => new StorageMap(Storage.CurrentContext, Prefix_Schema);
+        private static StorageMap Claims => new StorageMap(Storage.CurrentContext, Prefix_Claims);
 
         /// <summary>
         /// <summary>
@@ -36,13 +44,10 @@ namespace SeraphID
             return ISSUER_NAME;
         }
 
-        /// <summary>
-        /// Get public key list
-        /// </summary>
-        public static ECPoint[] GetPublicKeys()
+        public static void _deploy(object data, bool update)
         {
-            ECPoint[] publicKeyList = Recovery.GetPublicKeys(ISSUER_DEFAULT_PUBLIC_KEY);
-            return publicKeyList;
+            if (update) return;
+            AdminList.Put(ISSUER_DEFAULT_PUBLIC_KEY, 0);
         }
 
         /// <summary>
@@ -63,7 +68,7 @@ namespace SeraphID
         /// <param name="schemaDefinition">schema definition</param>
         public static bool RegisterSchema(string schemaName, string schemaDefinition)
         {
-            if (!IsCalledByOwner()) throw new Exception("Only SmartContract owner can call this operation");
+            if (!IsCalledByAdmin()) throw new Exception("Only SmartContract admin can call this operation");
 
             string existingDefinition = Schema.Get(schemaName);
 
@@ -81,7 +86,7 @@ namespace SeraphID
         /// <param name="id">claim ID</param>
         public static bool InjectClaim(string id)
         {
-            if (!IsCalledByOwner()) throw new Exception("Only SmartContract owner can call this operation");
+            if (!IsCalledByAdmin()) throw new Exception("Only SmartContract admin can call this operation");
 
             ClaimStatus status = ByteArray2ClaimStatus((byte[])Claims.Get(id));
 
@@ -98,7 +103,7 @@ namespace SeraphID
         /// <param name="id">claim ID</param>
         public static bool RevokeClaim(string id)
         {
-            if (!IsCalledByOwner()) throw new Exception("Only SmartContract owner can call this operation");
+            if (!IsCalledByAdmin()) throw new Exception("Only SmartContract admin can call this operation");
 
             ClaimStatus status = ByteArray2ClaimStatus((byte[])Claims.Get(id));
 
@@ -120,66 +125,6 @@ namespace SeraphID
         }
 
         /// <summary>
-        /// Set the recovery list
-        /// </summary>
-        /// <param name="threshold">the threshold number of signatures</param>
-        /// <param name="members">the public keys in the recovery list</param>
-        /// <param name="index">the index (BigInteger) of the signature for initializing or indexes (BigInteger[]) of signatures for updating in the recovery list</param>
-        /// <param name="message">the signed message</param>
-        /// <param name="signature">the signature (byte[]) for initializing or signatures (byte[][]) for updating</param>
-        public static bool SetRecovery(BigInteger threshold, ECPoint[] members, object index, object message, object signature)
-        {
-            object[] newArgs = new object[5];
-            newArgs[0] = ISSUER_DEFAULT_PUBLIC_KEY;
-            RecoveryList recoveryList = new RecoveryList()
-            {
-                threshold = threshold,
-                members = members
-            };
-            newArgs[1] = recoveryList;
-            newArgs[2] = index;
-            newArgs[3] = message;
-            newArgs[4] = signature;
-            return Recovery.SetRecovery(newArgs);
-        }
-
-        /// <summary>
-        /// Add a new public key by the recovery mechanism
-        /// </summary>
-        /// <param name="addedPubKey">the public key to be added</param>
-        /// <param name="recoveryIndexes">indexes (BigInteger[]) of signatures  of the public keys in the current recovery list</param>
-        /// <param name="message">the signed message</param>
-        /// <param name="signature">signatures (byte[][]) of the public keys in the current recovery list</param>
-        public static bool AddKeyByRecovery(ECPoint addedPubKey, BigInteger[] recoveryIndexes, byte[] message, byte[][] signature)
-        {
-            object[] newArgs = new object[5];
-            newArgs[0] = ISSUER_DEFAULT_PUBLIC_KEY;
-            newArgs[1] = addedPubKey;
-            newArgs[2] = recoveryIndexes;
-            newArgs[3] = message;
-            newArgs[4] = signature;
-            return Recovery.AddKeyByRecovery(newArgs);
-        }
-
-        /// <summary>
-        /// Remove a public key by the recovery mechanism
-        /// </summary>
-        /// <param name="removedPubKey">the public key to be removed</param>
-        /// <param name="recoveryIndexes">indexes (BigInteger[]) of signatures of the public keys in the current recovery list</param>
-        /// <param name="message">the signed message</param>
-        /// <param name="signature">signatures (byte[][]) of the public keys in the current recovery list</param>
-        public static bool RemoveKeyByRecovery(ECPoint removedPubKey, BigInteger[] recoveryIndexes, byte[] message, byte[][] signature)
-        {
-            object[] newArgs = new object[5];
-            newArgs[0] = ISSUER_DEFAULT_PUBLIC_KEY;
-            newArgs[1] = removedPubKey;
-            newArgs[2] = recoveryIndexes;
-            newArgs[3] = message;
-            newArgs[4] = signature;
-            return Recovery.RemoveKeyByRecovery(newArgs);
-        }
-
-        /// <summary>
         /// Helper method to serialize ClaimStatus
         /// </summary>
         /// <param name="value">ClaimStatus</param>
@@ -194,23 +139,7 @@ namespace SeraphID
         private static ClaimStatus ByteArray2ClaimStatus(byte[] value)
         {
             if (value == null || value.Length == 0) return ClaimStatus.Nonexistent;
-            return (ClaimStatus)(int)value.ToBigInteger();
-        }
-
-        /// <summary>
-        /// check if the caller is the memeber of the recovery list
-        /// </summary>
-        /// <returns>true if it is</returns>
-        private static bool IsCalledByOwner()
-        {
-            ECPoint[] pubkeys = GetPublicKeys();
-            int pubkeyIndex = 0;
-            for (; pubkeyIndex < pubkeys.Length; pubkeyIndex++)
-            {
-                if (Runtime.CheckWitness(Contract.CreateStandardAccount(pubkeys[pubkeyIndex]))) break;
-            }
-            if (pubkeyIndex >= pubkeys.Length) return false;
-            return true;
+            return (ClaimStatus)(int)(BigInteger)(ByteString)value;
         }
     }
 }

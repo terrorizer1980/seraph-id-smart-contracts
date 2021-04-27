@@ -37,14 +37,11 @@ bool RegisterSchema(string schemaName, string schemaDefinition); // Registers a 
 bool InjectClaim(string claimID); // Injects a claim to allow for revokability
 bool RevokeClaim(string claimID); // Revokes a claim
 bool IsValidClaim(string claimID); // Returns a claims revocation status
-bool SetRecovery(BigInteger threshold, ECPoint[] members, object index, object message, object signature); // Set the recovery list
-bool AddKeyByRecovery(ECPoint addedPubKey, BigInteger[] recoveryIndexes, byte[] message, byte[][] signature); // Add a new public key by the recovery mechanism
-bool RemoveKeyByRecovery(ECPoint removedPubKey, BigInteger[] recoveryIndexes, byte[] message, byte[][] signature); // remove a public key by the recovery mechanism
+bool AddAdmin(ECPoint pubKey); // Add an admin
+bool RemoveAdmin(ECPoint pubKey); // Remove an admin
+ECPoint[] GetAdminList(); // Get all the admins
 
 ```
-
-For more detailed information about the recovery mechanism, please check at [here](./recovery-mechanism.md)
-
 ## Root Of Trust
 
 ```c#
